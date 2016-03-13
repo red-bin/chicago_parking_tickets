@@ -1,210 +1,176 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>red-bin.GitHub.io by red-bin</title>
+(function(define, require, requireNative, requireAsync, exports, console, privates,$Array, $Function, $JSON, $Object, $RegExp, $String, $Error) {'use strict';// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">red-bin.GitHub.io</h1>
-        <p class="header">Data, civics and bad data</p>
+var createClassWrapper = requireNative('utils').createClassWrapper;
+var nativeDeepCopy = requireNative('utils').deepCopy;
+var schemaRegistry = requireNative('schema_registry');
+var CHECK = requireNative('logging').CHECK;
+var DCHECK = requireNative('logging').DCHECK;
+var WARNING = requireNative('logging').WARNING;
 
+/**
+ * An object forEach. Calls |f| with each (key, value) pair of |obj|, using
+ * |self| as the target.
+ * @param {Object} obj The object to iterate over.
+ * @param {function} f The function to call in each iteration.
+ * @param {Object} self The object to use as |this| in each function call.
+ */
+function forEach(obj, f, self) {
+  for (var key in obj) {
+    if ($Object.hasOwnProperty(obj, key))
+      $Function.call(f, self, key, obj[key]);
+  }
+}
 
+/**
+ * Assuming |array_of_dictionaries| is structured like this:
+ * [{id: 1, ... }, {id: 2, ...}, ...], you can use
+ * lookup(array_of_dictionaries, 'id', 2) to get the dictionary with id == 2.
+ * @param {Array<Object<?>>} array_of_dictionaries
+ * @param {string} field
+ * @param {?} value
+ */
+function lookup(array_of_dictionaries, field, value) {
+  var filter = function (dict) {return dict[field] == value;};
+  var matches = array_of_dictionaries.filter(filter);
+  if (matches.length == 0) {
+    return undefined;
+  } else if (matches.length == 1) {
+    return matches[0]
+  } else {
+    throw new Error("Failed lookup of field '" + field + "' with value '" +
+                    value + "'");
+  }
+}
 
-        <ul>
-          <li><a class="buttons github" href="https://github.com/red-bin">GitHub Profile</a></li>
-        </ul>
+function loadTypeSchema(typeName, defaultSchema) {
+  var parts = $String.split(typeName, '.');
+  if (parts.length == 1) {
+    if (defaultSchema == null) {
+      WARNING('Trying to reference "' + typeName + '" ' +
+              'with neither namespace nor default schema.');
+      return null;
+    }
+    var types = defaultSchema.types;
+  } else {
+    var schemaName = $Array.join($Array.slice(parts, 0, parts.length - 1), '.');
+    var types = schemaRegistry.GetSchema(schemaName).types;
+  }
+  for (var i = 0; i < types.length; ++i) {
+    if (types[i].id == typeName)
+      return types[i];
+  }
+  return null;
+}
 
-      </header>
-      <section>
-        <h1>
-<a id="chappylolgithubio" class="anchor" href="#chappylolgithubio" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>chappylol.github.io</h1>
+/**
+ * Takes a private class implementation |cls| and exposes a subset of its
+ * methods |functions| and properties |properties| and |readonly| in a public
+ * wrapper class that it returns. Within bindings code, you can access the
+ * implementation from an instance of the wrapper class using
+ * privates(instance).impl, and from the implementation class you can access
+ * the wrapper using this.wrapper (or implInstance.wrapper if you have another
+ * instance of the implementation class).
+ * @param {string} name The name of the exposed wrapper class.
+ * @param {Object} cls The class implementation.
+ * @param {{superclass: ?Function,
+ *          functions: ?Array<string>,
+ *          properties: ?Array<string>,
+ *          readonly: ?Array<string>}} exposed The names of properties on the
+ *     implementation class to be exposed. |superclass| represents the
+ *     constructor of the class to be used as the superclass of the exposed
+ *     class; |functions| represents the names of functions which should be
+ *     delegated to the implementation; |properties| are gettable/settable
+ *     properties and |readonly| are read-only properties.
+ */
+function expose(name, cls, exposed) {
+  var publicClass = createClassWrapper(name, cls, exposed.superclass);
 
-<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> pandas <span class="pl-k">as</span> pd
-<span class="pl-k">import</span> usaddress
-<span class="pl-k">import</span> difflib
-<span class="pl-k">from</span> usaddress <span class="pl-k">import</span> parse
+  if ('functions' in exposed) {
+    $Array.forEach(exposed.functions, function(func) {
+      publicClass.prototype[func] = function() {
+        var impl = privates(this).impl;
+        return $Function.apply(impl[func], impl, arguments);
+      };
+    });
+  }
 
-<span class="pl-k">import</span> psycopg2
-<span class="pl-k">import</span> geopandas <span class="pl-k">as</span> gp
-<span class="pl-k">import</span> re
-<span class="pl-k">from</span> geopandas <span class="pl-k">import</span> GeoDataFrame,GeoSeries
+  if ('properties' in exposed) {
+    $Array.forEach(exposed.properties, function(prop) {
+      $Object.defineProperty(publicClass.prototype, prop, {
+        enumerable: true,
+        get: function() {
+          return privates(this).impl[prop];
+        },
+        set: function(value) {
+          var impl = privates(this).impl;
+          delete impl[prop];
+          impl[prop] = value;
+        }
+      });
+    });
+  }
 
-<span class="pl-k">%</span>matplotlib notebook
-<span class="pl-k">import</span> matplotlib.pyplot <span class="pl-k">as</span> plt
-<span class="pl-k">from</span> IPython.display <span class="pl-k">import</span> display
-<span class="pl-k">import</span> numpy <span class="pl-k">as</span> np
+  if ('readonly' in exposed) {
+    $Array.forEach(exposed.readonly, function(readonly) {
+      $Object.defineProperty(publicClass.prototype, readonly, {
+        enumerable: true,
+        get: function() {
+          return privates(this).impl[readonly];
+        },
+      });
+    });
+  }
 
-<span class="pl-k">%</span>matplotlib inline
-<span class="pl-k">%</span>load_ext cythonmagic</pre></div>
+  return publicClass;
+}
 
-<pre><code>/usr/lib/python2.7/site-packages/IPython/extensions/cythonmagic.py:21: UserWarning: The Cython magic has been moved to the Cython package
-  warnings.warn("""The Cython magic has been moved to the Cython package""")
-</code></pre>
+/**
+ * Returns a deep copy of |value|. The copy will have no references to nested
+ * values of |value|.
+ */
+function deepCopy(value) {
+  return nativeDeepCopy(value);
+}
 
-<div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">parse_addr</span>(<span class="pl-smi">addr</span>):
-    parsed <span class="pl-k">=</span> usaddress.parse(addr)
-    addr_dict <span class="pl-k">=</span> <span class="pl-c1">dict</span>([ (key, val) <span class="pl-k">for</span> val, key <span class="pl-k">in</span> parsed ])
+/**
+ * Wrap an asynchronous API call to a function |func| in a promise. The
+ * remaining arguments will be passed to |func|. Returns a promise that will be
+ * resolved to the result passed to the callback or rejected if an error occurs
+ * (if chrome.runtime.lastError is set). If there are multiple results, the
+ * promise will be resolved with an array containing those results.
+ *
+ * For example,
+ * promise(chrome.storage.get, 'a').then(function(result) {
+ *   // Use result.
+ * }).catch(function(error) {
+ *   // Report error.message.
+ * });
+ */
+function promise(func) {
+  var args = $Array.slice(arguments, 1);
+  DCHECK(typeof func == 'function');
+  return new Promise(function(resolve, reject) {
+    args.push(function() {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError));
+        return;
+      }
+      if (arguments.length <= 1)
+        resolve(arguments[0]);
+      else
+        resolve($Array.slice(arguments));
+    });
+    $Function.apply(func, null, args);
+  });
+}
 
-    streetname <span class="pl-k">=</span> addr_dict[<span class="pl-s"><span class="pl-pds">'</span>StreetName<span class="pl-pds">'</span></span>]
-    <span class="pl-k">if</span> <span class="pl-s"><span class="pl-pds">'</span>StreetNamePreDirectional<span class="pl-pds">'</span></span> <span class="pl-k">in</span> addr_dict:
-        streetdir <span class="pl-k">=</span> addr_dict[<span class="pl-s"><span class="pl-pds">'</span>StreetNamePreDirectional<span class="pl-pds">'</span></span>]
-    <span class="pl-k">else</span>:
-        streetdir <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>
-        addr_dict[<span class="pl-s"><span class="pl-pds">'</span>StreetNamePreDirectional<span class="pl-pds">'</span></span>] <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>
+exports.$set('forEach', forEach);
+exports.$set('loadTypeSchema', loadTypeSchema);
+exports.$set('lookup', lookup);
+exports.$set('expose', expose);
+exports.$set('deepCopy', deepCopy);
+exports.$set('promise', promise);
 
-    <span class="pl-k">if</span> streetname <span class="pl-k">not</span> <span class="pl-k">in</span> unique_mapstreets:
-        fixed_street <span class="pl-k">=</span> correct_street(streetname, streetdir)
-        <span class="pl-k">if</span> fixed_street:
-            addr_dict[<span class="pl-s"><span class="pl-pds">'</span>StreetName<span class="pl-pds">'</span></span>] <span class="pl-k">=</span> fixed_street
-        <span class="pl-k">if</span> <span class="pl-k">not</span> fixed_street:
-            <span class="pl-k">return</span> <span class="pl-c1">None</span>
-
-    ret_addr <span class="pl-k">=</span> pd.Series(addr_dict)
-
-    <span class="pl-k">return</span> ret_addr</pre></div>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">get_closest</span>(<span class="pl-smi">streetname</span>, <span class="pl-smi">streetdir</span>):
-
-    street_str <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span><span class="pl-pds">"</span></span> <span class="pl-k">%</span> streetname
-    match <span class="pl-k">=</span> difflib.get_close_matches(<span class="pl-c1">str</span>(street_str), unique_mapstreets, <span class="pl-v">cutoff</span><span class="pl-k">=</span><span class="pl-c1">.8</span>, <span class="pl-v">n</span><span class="pl-k">=</span><span class="pl-c1">1</span>)
-    <span class="pl-k">if</span> match:
-        <span class="pl-k">return</span> match[<span class="pl-c1">0</span>]
-
-    <span class="pl-k">if</span> re.match(<span class="pl-s"><span class="pl-pds">'</span>^[0-9]+<span class="pl-pds">'</span></span>,street_str):
-        match <span class="pl-k">=</span> difflib.get_close_matches(<span class="pl-c1">str</span>(streetname), unique_mapstreets, <span class="pl-v">cutoff</span><span class="pl-k">=</span><span class="pl-c1">.6</span>, <span class="pl-v">n</span><span class="pl-k">=</span><span class="pl-c1">1</span>)
-        <span class="pl-k">if</span> match:
-            <span class="pl-k">return</span> match[<span class="pl-c1">0</span>]
-
-    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>[WARN] Could not find <span class="pl-c1">%s</span><span class="pl-pds">"</span></span> <span class="pl-k">%</span> streetname
-
-<span class="pl-k">def</span> <span class="pl-en">correct_street</span>(<span class="pl-smi">streetname</span>, <span class="pl-smi">streetdir</span>):
-
-
-    correct_street <span class="pl-k">=</span> get_closest(streetname, streetdir)
-    <span class="pl-k">if</span> correct_street:
-        <span class="pl-k">return</span> correct_street</pre></div>
-
-<div class="highlight highlight-source-python"><pre>sql <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"""</span>SELECT gid,pre_dir,street_nam,street_typ, l_f_add as f_add, l_t_add as t_add, geom from transportation where street_nam is not NULL</span>
-<span class="pl-s">union</span>
-<span class="pl-s">SELECT gid,pre_dir,street_nam,street_typ, r_f_add as f_add, r_t_add as t_add, geom as geom from transportation where street_nam is not NULL</span>
-<span class="pl-s"><span class="pl-pds">"""</span></span>
-
-connection <span class="pl-k">=</span> psycopg2.connect(<span class="pl-v">database</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>postgres<span class="pl-pds">'</span></span>, <span class="pl-v">user</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>postgres<span class="pl-pds">'</span></span>)
-mapdata <span class="pl-k">=</span> GeoDataFrame.from_postgis(sql, connection)
-</pre></div>
-
-<div class="highlight highlight-source-python"><pre>temp_mapgroups_wdir <span class="pl-k">=</span> mapdata.groupby([<span class="pl-s"><span class="pl-pds">'</span>pre_dir<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>street_nam<span class="pl-pds">'</span></span>])
-temp_mapgroups <span class="pl-k">=</span> mapdata.groupby([<span class="pl-s"><span class="pl-pds">'</span>street_nam<span class="pl-pds">'</span></span>])
-
-unique_mapstreets <span class="pl-k">=</span> [ dirstreet <span class="pl-k">for</span> dirstreet <span class="pl-k">in</span> temp_mapgroups.groups.keys() ]
-unique_mapstreets_wdir <span class="pl-k">=</span> [ street <span class="pl-k">for</span> street <span class="pl-k">in</span> temp_mapgroups_wdir.groups.keys() ]</pre></div>
-
-<div class="highlight highlight-source-python"><pre>tickets <span class="pl-k">=</span> pd.read_csv(<span class="pl-s"><span class="pl-pds">"</span>/opt/ramdisk/randomtickets.csv<span class="pl-pds">"</span></span>) 
-addresses <span class="pl-k">=</span> tickets[<span class="pl-s"><span class="pl-pds">'</span>address<span class="pl-pds">'</span></span>]
-
-pd_addr <span class="pl-k">=</span> []
-<span class="pl-k">for</span> addr <span class="pl-k">in</span> addresses:
-    parsed <span class="pl-k">=</span> parse_addr(addr)
-    <span class="pl-k">if</span> <span class="pl-c1">type</span>(parsed) <span class="pl-k">!=</span> <span class="pl-c1">type</span>(<span class="pl-c1">None</span>):
-        pd_addr.append(parsed)
-
-pd_addr <span class="pl-k">=</span> pd.DataFrame(pd_addr)</pre></div>
-
-<pre><code>[WARN] Could not find L
-[WARN] Could not find ISLAND
-[WARN] Could not find EUROPE
-[WARN] Could not find PLAISANCE
-[WARN] Could not find F
-[WARN] Could not find KING
-[WARN] Could not find SOUTH
-[WARN] Could not find S
-[WARN] Could not find MAWR
-[WARN] Could not find F
-[WARN] Could not find LOT
-[WARN] Could not find PK
-[WARN] Could not find PAUL
-[WARN] Could not find KING
-[WARN] Could not find PARKING
-[WARN] Could not find ISLAND
-[WARN] Could not find PARKING
-</code></pre>
-
-<div class="highlight highlight-source-python"><pre>addr_streetgroups <span class="pl-k">=</span> pd_addr.groupby([<span class="pl-s"><span class="pl-pds">'</span>StreetName<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>StreetNamePreDirectional<span class="pl-pds">'</span></span>], <span class="pl-v">sort</span><span class="pl-k">=</span><span class="pl-c1">True</span>)</pre></div>
-
-<div class="highlight highlight-source-python"><pre>map_streetgroups <span class="pl-k">=</span> mapdata.groupby([<span class="pl-s"><span class="pl-pds">'</span>street_nam<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>pre_dir<span class="pl-pds">'</span></span>], <span class="pl-v">sort</span><span class="pl-k">=</span><span class="pl-c1">True</span>)</pre></div>
-
-<div class="highlight highlight-source-python"><pre>addr_set <span class="pl-k">=</span> addr_streetgroups.groups.keys()
-map_set <span class="pl-k">=</span> map_streetgroups.groups.keys()</pre></div>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">get_map_tkt_pair</span>(<span class="pl-smi">street</span>, <span class="pl-smi">direction</span>):
-    <span class="pl-k">try</span>:
-        tkt_group <span class="pl-k">=</span> addr_streetgroups.get_group((street, direction))
-        map_group <span class="pl-k">=</span> map_streetgroups.get_group((street, direction))
-        <span class="pl-k">return</span> [ map_group, tkt_group ]
-    <span class="pl-k">except</span>:
-        <span class="pl-k">return</span> [<span class="pl-c1">None</span>, <span class="pl-c1">None</span>]
-
-</pre></div>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">get_mapdata</span>(<span class="pl-smi">mapdata</span>, <span class="pl-smi">tktdata</span>):
-    ret <span class="pl-k">=</span> []
-
-    <span class="pl-k">for</span> tkt <span class="pl-k">in</span> tktdata.AddressNumber:
-        geometry <span class="pl-k">=</span> <span class="pl-c1">None</span>
-        <span class="pl-k">for</span> addr_range, group <span class="pl-k">in</span> mapdata.groupby([<span class="pl-s"><span class="pl-pds">'</span>f_add<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>t_add<span class="pl-pds">'</span></span>]):
-            start, end <span class="pl-k">=</span> addr_range
-            <span class="pl-k">if</span> <span class="pl-c1">int</span>(tkt) <span class="pl-k">in</span> <span class="pl-c1">range</span>(<span class="pl-c1">int</span>(start), <span class="pl-c1">int</span>(end)):
-                geometry <span class="pl-k">=</span> group.geometry.values[<span class="pl-c1">0</span>]
-                ret.append(geometry)
-
-
-    <span class="pl-k">if</span> ret:
-        <span class="pl-k">return</span> ret
-    <span class="pl-k">else</span>:
-        <span class="pl-k">return</span> <span class="pl-c1">None</span></pre></div>
-
-<div class="highlight highlight-source-python"><pre>pairs <span class="pl-k">=</span> [ get_map_tkt_pair(street, direction) <span class="pl-k">for</span> street, direction <span class="pl-k">in</span> addr_set ]
-
-plotyay <span class="pl-k">=</span> []
-
-<span class="pl-k">for</span> mapdata,tktdata <span class="pl-k">in</span> pairs:
-    <span class="pl-k">if</span> mapdata <span class="pl-k">is</span> <span class="pl-c1">None</span> <span class="pl-k">or</span> tktdata <span class="pl-k">is</span> <span class="pl-c1">None</span>:
-        <span class="pl-k">continue</span>
-    <span class="pl-k">else</span>:
-        <span class="pl-c">#<span class="pl-k">TODO</span>: PUT MORE INFO IN GRAPH LATER</span>
-        street_ticket_geos <span class="pl-k">=</span> get_mapdata(mapdata,tktdata)
-        <span class="pl-k">if</span> street_ticket_geos <span class="pl-k">is</span> <span class="pl-k">not</span> <span class="pl-c1">None</span>:
-            plotyay.append(street_ticket_geos)       </pre></div>
-
-<div class="highlight highlight-source-python"><pre>test <span class="pl-k">=</span>[ a[<span class="pl-c1">0</span>] <span class="pl-k">for</span> a <span class="pl-k">in</span> [ b.values <span class="pl-k">for</span> b <span class="pl-k">in</span> plotyay ] ]
-a <span class="pl-k">=</span> GeoDataFrame()
-a[<span class="pl-s"><span class="pl-pds">'</span>geometry<span class="pl-pds">'</span></span>] <span class="pl-k">=</span> test</pre></div>
-
-<div class="highlight highlight-source-python"><pre>a.plot()</pre></div>
-
-<pre><code>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbf6c36b690&gt;
-</code></pre>
-
-<p><img src="output_13_1.png" alt="png"></p>
-
-<div class="highlight highlight-source-python"><pre></pre></div>
-      </section>
-      <footer>
-        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
-      </footer>
-    </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
-  </body>
-</html>
+})
