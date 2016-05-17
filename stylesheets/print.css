@@ -226,3 +226,8 @@ footer a {
 .clearfix {display: inline-block;}
 * html .clearfix {height: 1%;}
 .clearfix {display: block;}
+
+
+##CHAPADDITIONS##
+div.toggler {  cursor:pointer; }
+div.toggler div { display:none; }

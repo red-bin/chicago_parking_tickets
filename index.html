@@ -11,6 +11,26 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
     <title>Matt Chapman by red-bin</title>
+
+    <script>
+      function toggleText(id) {
+        var sections = [ "current_download", "by_type","getting_data","orig_download","by_type","getting_data" ] ;
+
+        var sects_len = sections.length;
+        for (i = 0; i < sects_len; i++) {
+          sect_name = sections[i] ;
+          if ( id == sect_name ) {
+            var new_text = document.getElementById(sect_name) ;
+            new_text.style.display='block' ;
+            break ;
+          }
+          else{
+            var text_to_blank = document.getElementById(id);
+            text_to_blank.style.display='none' ;  
+          }
+        }
+      }
+    </script>
   </head>
 
   <body>
@@ -19,28 +39,66 @@
 
         <header>
           <h1>Matt Chapman</h1>
-          <h2>Linux.Data.Civics.</h2>
+          <h2>Civics. Data. Linux. Security.Kinda.</h2>
+          <h2>matt@red-bin.com</h2>
         </header>
         <hr>
 
         <section id="main_content">
-          <h1>
-
-          <a href="https://plot.ly/~red-bin/6.embed">
-            <img src="basic-scatter.png">
-          </a>
-
-<iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="https://plot.ly/~red-bin/518.embed" height="525px" width="100%"></iframe>
-<div class="highlight highlight-source-python"><pre>
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et 
-dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip 
-ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore 
-eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-deserunt mollit anim id est laborum.</pre></div>
+          <center><h1>Chicago Parking Tickets: Data</h1></center>
+          <br><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", alt="First plotly graph." height="100%"></a>
+          <table>
+            <tr>
+              <th><h1>Data</h1></th>
+              <th><h1>Analysis</h1></th>
+              <th><h1>Story</h1></th>
+              <th><h1>Thoughts</h1></th>
+            </tr>
+            <tr>
+              <th><div class="toggler" onclick="toggleText('current_download');">Get Current</div></th>
+              <th><div class="toggler" onclick="toggleText('by_type');">By Type</div></th>
+              <th><div class="toggler" onclick="toggleText('how');">How?</div></th>
+              <th><div class="toggler" onclick="toggleText('suggestions');">Ways to Improve</div></th>
+            </tr>
+            <tr>
+              <th><div class="toggler" onclick="toggleText('orig_download');">Get Original</div></th>
+              <th><div class="toggler" onclick="toggleText('month_year');">By Month/Year</div></th>
+              <th><div class="toggler" onclick="toggleText('why');">Why?</div></th>
+              <th><div class="toggler" onclick="toggleText('foia');">FOIA</div></th>
+            </tr>
+          </table>
+          <div id="current_download" hidden=True>
+            <table>
+              <tr>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+              </tr>
+            </table>
+          </div>
+          <div id="orig_download" hidden=True>
+            <table>
+              <tr>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+              </tr>
+            </table>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          </div>
+          <div id="by_type" hidden=True>
+            <table><tr><th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th></tr>
+            </table>
+jjjjjjjjjjjjjjjjjjjjjj
+          </div>
+          <div id="suggestions" hidden=True>Hey there, sup. </div>
+          <div id="foia" hidden=True>Hey there, sup. </div>
+          <div id="how" hidden=True>Hey there, sup. </div>
+          <div id="why" hidden=True>Hey there, sup. </div>
+          <div id="month_year" hidden=True>monthyear stuffs </div>
         </section>
 
         <footer>
-          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+           Based on Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
         </footer>
 
         
