@@ -14,9 +14,9 @@
 
     <script>
       function toggleText(id) {
-        var sections = [ "current_download", "by_type","getting_data","orig_download","by_type","getting_data" ] ;
+        var sections = [ "current_download","orig_download", "github" ] ;
 
-        var sects_len = sections.length;
+        var sects_len = sections.length-1;
         for (i = 0; i < sects_len; i++) {
           sect_name = sections[i] ;
           if ( id == sect_name ) {
@@ -35,43 +35,46 @@
   <body>
     <div id="container">
       <div class="inner">
-
-        <header>
-          <h1>Matt Chapman</h1>
-          <h2>Civics. Data. Linux. Security.Kinda.</h2>
-          <h2>matt@red-bin.com</h2>
-        </header>
-        <hr>
-
+        <br>
         <section id="main_content">
-          <center><h1>Chicago Parking Tickets: Data</h1></center>
-          <br><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", alt="First plotly graph." height="100%"></a>
+          <center><h1>Chicago Parking Tickets</h1></center>
+          <br>
           <table>
             <tr>
-              <th><h1>Data</h1></th>
-              <th><h1>Analysis</h1></th>
-              <th><h1>Story</h1></th>
-              <th><h1>Thoughts</h1></th>
-            </tr>
-            <tr>
-              <th><div class="toggler" onclick="toggleText('current_download');">Get Current</div></th>
-              <th><div class="toggler" onclick="toggleText('by_type');">By Type</div></th>
-              <th><div class="toggler" onclick="toggleText('how');">How?</div></th>
-              <th><div class="toggler" onclick="toggleText('suggestions');">Ways to Improve</div></th>
-            </tr>
-            <tr>
-              <th><div class="toggler" onclick="toggleText('orig_download');">Get Original</div></th>
-              <th><div class="toggler" onclick="toggleText('month_year');">By Month/Year</div></th>
-              <th><div class="toggler" onclick="toggleText('why');">Why?</div></th>
-              <th><div class="toggler" onclick="toggleText('foia');">FOIA</div></th>
+              <th><div class="toggler" onclick="toggleText('current_download');">Datastuff 1</div></th>
+              <th><div class="toggler" onclick="toggleText('orig_download');">Datstuff 2</div></th>
+              <th><a href ="https://github.com/red-bin">GitHub</a></th>
             </tr>
           </table>
           <div id="current_download" hidden=True>
+            <br><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", alt="First plotly graph." height="100%"></a>
+            <hr>
+            <center><h1>Top Ticketed Blocks</h1></center>
+            <hr>
             <table>
               <tr>
                 <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
                 <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
                 <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+              </tr>
+              <tr>
+                <th>blah</th>
+                <th>blah</th>
+                <th>blah</th>
+                <th>blah</th>
+              </tr>
+              <tr>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+                <th><a target="_blank" href="https://plot.ly/~red-bin/6.embed"><img src="basic-scatter.png" width="100%", height="100%"></a></th>
+              </tr>
+              <tr>
+                <th>blah</th>
+                <th>blah</th>
+                <th>blah</th>
+                <th>blah</th>
               </tr>
             </table>
           </div>
@@ -97,7 +100,7 @@ jjjjjjjjjjjjjjjjjjjjjj
         </section>
 
         <footer>
-           Based on Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+           <center>Based on Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</center>
         </footer>
 
         
